@@ -1,0 +1,34 @@
+version: "3.9"
+
+services:
+  engine:
+    build:
+      context: .
+      dockerfile: ./docker/engine/Dockerfile
+    depends_on:
+      - kafka
+    command: ["./wait-for-it.sh", "kafka:9092", "--", "python", "src/main.py"]
+  consumer:
+    build:
+      context: .
+      dockerfile: ./docker/consumer/Dockerfile
+    depends_on:
+      - kafka
+    command: ["./wait-for-it.sh", "kafka:9092", "--", "python", "src/consumer.py"]
+  zookeeper:
+    image: wurstmeister/zookeeper
+    ports:
+      - "2181:2181"
+  kafka:
+    build:
+      context: .
+      dockerfile: ./docker/kafka/Dockerfile
+    ports:
+      - "9092"
+    environment:
+      DOCKER_API_VERSION: 1.22
+      KAFKA_ADVERTISED_HOST_NAME: 192.168.99.100
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_CREATE_TOPICS: "BTCUSD:1:1,ETHBTC:1:1,ETHUSD:1:1"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
